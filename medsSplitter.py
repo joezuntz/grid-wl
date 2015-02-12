@@ -5,12 +5,22 @@ from Ganga.GPIDev.Base.Proxy import addProxy, stripProxy
 
 import re
 import os
+import errno
 
 tile_pattern = re.compile(r'DES[0-9][0-9][0-9][0-9][+-][0-9][0-9][0-9][0-9]')
 tile_band_pattern = re.compile(r'DES[0-9][0-9][0-9][0-9][+-][0-9][0-9][0-9][0-9][_-][ugrizy]')
 run_pattern = re.compile(r'[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]_DES[0-9][0-9][0-9][0-9][+-][0-9][0-9][0-9][0-9]')
 great_des_pattern=re.compile(r"nbc(.)+\.meds\.([0-9][0-9][0-9])\.g([0-9][0-9])\.fits")
 
+
+def mkdir(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else: raise
+    
 
 def find_tilename(name):
     m = tile_pattern.search(name)
@@ -68,7 +78,18 @@ Split a collection of MEDS files up into chunks
 
                 logger.debug('Made a job for meds file %s and chunk %s'%(meds,chunk_file))
                 subjobs.append(stripProxy(j))
+        
+        self.makeJobDirectories(job,len(subjobs))
         return subjobs
+
+    def makeJobDirectories(self, job, n):
+        base=os.path.abspath(os.path.join(job.outputdir,os.pardir))
+        for i in xrange(n):
+            indir=os.path.join(base,'%d/input'%i)
+            outdir=os.path.join(base,'%d/output'%i)
+            print "Making", indir, outdir
+            mkdir(indir)
+            mkdir(outdir)
 
     def splitMeds(self, meds, cats, catdir):
         #meds is the filename for a meds file.
@@ -92,11 +113,13 @@ Split a collection of MEDS files up into chunks
 
         #split them into chunks of size chunksize
         chunks = split_chunks(cat_lines, self.chunksize)
+        if len(chunks)>100:
+            raise ValueError("More thank 100 chunks")
         
         task_list = []
         #Save each chunk as a new file and save the name of this chunk file
         for c,chunk in enumerate(chunks):
-            chunk_file=chunk_file='chunks/%s-%d.txt'%(meds,c)
+            chunk_file=chunk_file='chunks/%s-%d.txt'%(tile,c)
             f=open(chunk_file,'w')
             for line in chunk:
                 f.write(line)
