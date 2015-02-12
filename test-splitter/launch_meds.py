@@ -7,7 +7,7 @@ meds = [line.strip() for line in open(meds_list) if not line.strip().startswith(
 
 
 #meds=['DES0456-2345.txt', 'DES0456-2348.txt']
-chunksize=3
+chunksize=500
 catdir='cats'
 ini=File(ini_file)
 
@@ -20,8 +20,12 @@ args = [ini, catdir] + meds
 app=Executable(exe=exe, args=args)
 j=Job(application=app)
 
+# Set the backend
+j.backend=CREAM()
+j.backend.CE='ce03.tier2.hep.manchester.ac.uk:8443/cream-pbs-long'
 
-m=MedsSplitter(chunksize=3)
+
+m=MedsSplitter(chunksize=chunksize)
 j.splitter=m
 
 t=TextMerger()
@@ -30,4 +34,5 @@ t.ignorefailed=True
 j.postprocessors=t
 
 print j
+#j.submit()
 
