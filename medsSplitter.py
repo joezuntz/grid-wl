@@ -1,5 +1,6 @@
 from Ganga.GPIDev.Adapters.ISplitter import ISplitter
 from Ganga.GPIDev.Schema import *
+from Ganga.GPIDev.Lib.File import File, SandboxFile
 from Ganga.GPIDev.Base.Proxy import addProxy, stripProxy
 
 import re
@@ -36,20 +37,11 @@ class MedsSplitter(ISplitter):
 Split a collection of MEDS files up into chunks
     """
     _name = "MedsSplitter"
-    _schema = Schema(Version(1,0), {
-            'meds': SimpleItem(defvalue=[], 
-                               typelist=None,
-                               sequence=1,
-                               checkset='_checksetNestedLists', 
-                               doc='List of MEDS files to process'),
+    _schema = Schema(Version(1,1), {
             'chunksize': SimpleItem(defvalue=500, 
                                     typelist=['int'],
                                     sequence=0,
                                     doc='Size of object chunks'),
-            'catdir': SimpleItem(defvalue='cats',
-                                 typelist=['str'],
-                                 sequence=0,
-                                 doc='Relative directory containing selection catalogs')
             })
     def split(self, job):
         subjobs = []
@@ -57,16 +49,28 @@ Split a collection of MEDS files up into chunks
             os.mkdir('chunks')
         except OSError:
             pass
-        cats = os.listdir(self.catdir)
-        for meds in self.meds:
-            for chunk_file in self.splitMeds(meds,cats):
-                j=self.createSubjob(job)
-                j.application.args = [meds,chunk_file]
+
+        ini_file = job.application.args[0]
+        catdir = job.application.args[1]
+        meds_list = job.application.args[2:]
+        cats = os.listdir(catdir)
+        for meds in meds_list:
+            for chunk_file in self.splitMeds(meds,cats,catdir):
+                j=addProxy(self.createSubjob(job))
+                #output results base name
+                output_base='output'
+                output_main = 'output.main.txt'
+                output_epoch = 'output.epoch.txt'
+                
+                # set the command line
+                j.application.args = [meds, File(chunk_file), output_base, ini_file]
+                j.outputsandbox=[output_main, output_epoch]
+
                 logger.debug('Made a job for meds file %s and chunk %s'%(meds,chunk_file))
-                subjobs.append(j)
+                subjobs.append(stripProxy(j))
         return subjobs
 
-    def splitMeds(self, meds, cats):
+    def splitMeds(self, meds, cats, catdir):
         #meds is the filename for a meds file.
         #cats is a list of catalog files
 
@@ -77,7 +81,6 @@ Split a collection of MEDS files up into chunks
         #In catdir, find the corresponding catalog file
         matching_cat=None
         for cat in cats:
-            #print 'tile for cat %s = %s (want %s), %s' % (cat, find_tilename(cat), tile, tile==find_tilename(cat))
             if find_tilename(cat)==tile:
                 matching_cat=cat
                 break
@@ -85,7 +88,7 @@ Split a collection of MEDS files up into chunks
             raise ValueError("No catalog matches meds %s (tile %s)"%(meds,tile))
 
         #Read all the non-commented lines in catdir and
-        cat_lines = read_uncommented('%s/%s'%(self.catdir,matching_cat))
+        cat_lines = read_uncommented('%s/%s'%(catdir,matching_cat))
 
         #split them into chunks of size chunksize
         chunks = split_chunks(cat_lines, self.chunksize)
@@ -93,7 +96,7 @@ Split a collection of MEDS files up into chunks
         task_list = []
         #Save each chunk as a new file and save the name of this chunk file
         for c,chunk in enumerate(chunks):
-            chunk_file='chunks/%s-%d.txt'%(meds,c)
+            chunk_file=chunk_file='chunks/%s-%d.txt'%(meds,c)
             f=open(chunk_file,'w')
             for line in chunk:
                 f.write(line)
