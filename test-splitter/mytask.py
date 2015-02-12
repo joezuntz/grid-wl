@@ -1,8 +1,15 @@
 #inputs.  could load the meds list from file easily
-meds=['DES0456-2345.txt', 'DES0456-2348.txt']
+import sys
+meds_list = sys.argv[1]
+ini_file = sys.argv[2]
+
+meds = [line.strip() for line in open(meds_list) if not line.strip().startswith('#')]
+
+
+#meds=['DES0456-2345.txt', 'DES0456-2348.txt']
 chunksize=3
 catdir='cats'
-ini=File('fake.ini')
+ini=File(ini_file)
 
 #create the basic job from the ini file
 #and the main script.  The cat dir and meds files are
@@ -21,4 +28,6 @@ t=TextMerger()
 t.files=['output.main.txt','output.epoch.txt']
 t.ignorefailed=True
 j.postprocessors=t
+
+print j
 
