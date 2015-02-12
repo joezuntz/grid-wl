@@ -2,13 +2,15 @@
 
 #Location of main run directory with set setup-im3shape script in.
 #IM3SHAPE_DIR=$HOME/im3shape-grid
-IM3SHAPE_DIR=/cvmfs/northgrid.gridpp.ac.uk/lsst/testbed/im3shape-grid
+IM3SHAPE_DIR=/cvmfs/northgrid.gridpp.ac.uk/lsst/im3shape-grid
 
 MEDS=$1
 CAT=$2
 OUT=$3
 INI=$4
 
+
+#Some debug output to show all the files available
 echo $1 $2 $3 $4
 echo 
 echo Top
@@ -29,7 +31,6 @@ FIRST=0
 COUNT=10000000000
 
 #Set up im3shape - environment variables, etc
-
 cd $IM3SHAPE_DIR
 source setup-im3shape
 cd -
