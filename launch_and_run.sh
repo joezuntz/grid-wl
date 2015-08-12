@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 
+#Echo all commands
+set -o xtrace
+
 #Parameters of this run
 STORAGE_ELEMENT=srm://bohr3226.tier2.hep.manchester.ac.uk/dpm/tier2.hep.manchester.ac.uk/home/vo.northgrid.ac.uk
 CODE_DIR=/cvmfs/lsst.opensciencegrid.org/uk/shape-measurement/im3shape/im3shape-2015-08-03
 USERNAME=zuntz
-DATASET=tb-y1a1-v01
+DATASET=spt-e-gold
 RUN_NUMBER=1
-INDIR=$STORAGE_ELEMENT/$USERNAME/$DATASET/
+INDIR=$STORAGE_ELEMENT/$USERNAME/meds/$DATASET/
 OUTDIR=$STORAGE_ELEMENT/$USERNAME/results/$DATASET/$RUN_NUMBER/
 
 #should be distributed with the code
@@ -32,7 +35,7 @@ COUNT=1
 
 echo Downloading data `date`
 #Download/obtain data $MEDS and $CAT somehow
-gfal-copy $INDIR/$MEDS file://$PWD/$MEDS
+gfal-copy $INDIR/$MEDS file://$PWD/$MEDS 2>&1
 
 #Run the main code - also sets up environment
 echo Running code `date`
@@ -57,7 +60,7 @@ ls $INI
 cat $INI
 
 #Actually tun the code
-python -m py3shape.analyze_meds2 $MEDS $INI $CAT $OUT $FIRST $COUNT --split $JOB_COUNT
+python -m py3shape.analyze_meds2 $MEDS $INI $CAT $OUT $FIRST $COUNT --split $JOB_COUNT 2>&1
 
 #Restore old paths so we can run gfal-copy
 export PATH=$OLD_PATH
@@ -73,8 +76,8 @@ unset PYTHON_ROOT
 
 echo Copying back results  `date`
 # Copy results home somehow
-gfal-mkdir -p $OUTDIR
-gfal-copy file://$PWD/output.main.txt $OUTDIR/$MEDS.main.$FIRST.txt
-gfal-copy file://$PWD/output.epoch.txt $OUTDIR/$MEDS.epoch.$FIRST.txt
+gfal-mkdir -p $OUTDIR 2>&1
+gfal-copy file://$PWD/output.main.txt $OUTDIR/$MEDS.main.$FIRST.txt 2>&1
+gfal-copy file://$PWD/output.epoch.txt $OUTDIR/$MEDS.epoch.$FIRST.txt 2>&1
 
 echo Complete  `date`
