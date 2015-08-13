@@ -4,34 +4,36 @@
 set -o xtrace
 
 #Parameters of this run
-STORAGE_ELEMENT=srm://bohr3226.tier2.hep.manchester.ac.uk/dpm/tier2.hep.manchester.ac.uk/home/vo.northgrid.ac.uk
+STORAGE_ELEMENT=srm://bohr3226.tier2.hep.manchester.ac.uk/dpm/tier2.hep.manchester.ac.uk/home/lsst/zuntz
 CODE_DIR=/cvmfs/lsst.opensciencegrid.org/uk/shape-measurement/im3shape/im3shape-2015-08-03
-USERNAME=zuntz
-DATASET=spt-e-gold
+INPUT_BASE=meds
+OUTPUT_BASE=results
 RUN_NUMBER=1
-INDIR=$STORAGE_ELEMENT/$USERNAME/meds/$DATASET/
-OUTDIR=$STORAGE_ELEMENT/$USERNAME/results/$DATASET/$RUN_NUMBER/
 
 #should be distributed with the code
+DATASET=$1
 
 #Input files, need to be brought from somewhere
-MEDS=$1
-CAT=$2
+MEDS=$2
+CAT=$3
 
 #Output file base, $OUT.main.txt and $OUT.epoch.txt need
 #to be brought back after run
-OUT=$3
+OUT=$4
 
 #Which part of this file to run.  FIRST is now interpreted as a job index
 #our of JOB_COUNT
-FIRST=$4
-JOB_COUNT=$5
+FIRST=$5
+JOB_COUNT=$6
 
-INI=$6
+INI=$7
 
 #Dummy value since we are using --split below
 COUNT=1
 
+
+INDIR=$STORAGE_ELEMENT/$INPUT_BASE/$DATASET/
+OUTDIR=$STORAGE_ELEMENT/$OUTPUT_BASE/v$RUN_NUMBER/$DATASET/
 
 echo Downloading data `date`
 #Download/obtain data $MEDS and $CAT somehow
