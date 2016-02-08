@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+# Example run:
+# ./launch_and_run.sh srm://gridpp09.ecdf.ed.ac.uk/dpm/ecdf.ed.ac.uk/home/gridpp/lsst/zuntz/y1a1-v2-z/software/2016-02-01/im3shape-grid.tar.gz  srm://gridpp09.ecdf.ed.ac.uk/dpm/ecdf.ed.ac.uk/home/lsst/DES0005+0043-z-meds-y1a1-gamma.fits.fz  srm://gridpp09.ecdf.ed.ac.uk/dpm/ecdf.ed.ac.uk/home/gridpp/lsst/zuntz/y1a1-v2-z/results/DES0005+0043-z-meds-y1a1-gamma.fits.fz.0.20  params_bd.ini  all  0  20  blacklist-y1.txt
+
+# This would requires two files along with it - these are specified on the command line above.  The others are downloaded via gfal-copy.
+# params_bd.ini
+# blacklist-y1.txt
+
+
 #Echo all commands
 set -o xtrace
 
