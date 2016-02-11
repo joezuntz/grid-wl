@@ -13,7 +13,7 @@ class MedsJobs(object):
     code_root='srm://gridpp09.ecdf.ed.ac.uk/dpm/ecdf.ed.ac.uk/home/gridpp/lsst/zuntz'
     output_root=code_root #'srm://gridpp09.ecdf.ed.ac.uk/dpm/ecdf.ed.ac.uk/home/gridpp/lsst/zuntz'
     data_root='srm://gridpp09.ecdf.ed.ac.uk/dpm/ecdf.ed.ac.uk/home/lsst'
-    def __init__(self, tree_name, run_name, code_date, blacklist_file='blacklist-y1.txt', ini='params_bd.ini', nsplit=20, debug=0, local=False):
+    def __init__(self, tree_name, run_name, code_date, blacklist_file='blacklist-y1.txt', ini='params_bd.ini', nsplit=5, debug=0, local=False):
         self.run_name = run_name
         self.code_date = code_date
         self.tree = Ganga.GPI.jobtree
