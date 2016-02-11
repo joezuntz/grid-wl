@@ -155,6 +155,11 @@ def test_33():
     for tile_file in tile_files:
         j.add_meds(tile_file)
 
+def summarize(job):
+    statuses = ['submitted', 'running', 'completed']
+    counts = [len(job.subjobs.select(status=s)) for s in statuses]
+    print '  '.join('{0}:{1}'.format(s,c) for (s,c) in zip(statuses,counts)), job.backend.CE
+    
 
 if __name__=="__main__":
     j = test()
