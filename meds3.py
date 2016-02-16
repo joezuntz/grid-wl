@@ -6,7 +6,7 @@ import sys
 import collections
 import itertools
 
-creams = [line.strip() for line in open('working_ces.txt').readlines() if line.strip()]
+creams = [line.strip() for line in open('working_ces.txt').readlines() if (line.strip()) and (not line.startswith('#'))]
 cream_cycle = itertools.cycle(creams)
 
 class MedsJobs(object):
@@ -157,7 +157,7 @@ def test_33():
 
 def summarize(job):
     statuses = ['submitted', 'running', 'completed']
-    counts = [len(job.subjobs.select(status=s)) for s in statuses]
+    counts = [len([sj for sj in job.subjobs if sj.status==s]) for s in statuses]
     print '  '.join('{0}:{1}'.format(s,c) for (s,c) in zip(statuses,counts)), job.backend.CE
     
 
