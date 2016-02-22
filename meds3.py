@@ -10,10 +10,12 @@ creams = [line.strip() for line in open('working_ces.txt').readlines() if (line.
 cream_cycle = itertools.cycle(creams)
 
 class MedsJobs(object):
-    code_root='srm://gridpp09.ecdf.ed.ac.uk/dpm/ecdf.ed.ac.uk/home/gridpp/lsst/zuntz'
-    output_root=code_root #'srm://gridpp09.ecdf.ed.ac.uk/dpm/ecdf.ed.ac.uk/home/gridpp/lsst/zuntz'
-    data_root='srm://gridpp09.ecdf.ed.ac.uk/dpm/ecdf.ed.ac.uk/home/lsst'
-    def __init__(self, tree_name, run_name, code_date, blacklist_file='blacklist-y1.txt', ini='params_bd.ini', nsplit=5, debug=0, local=False):
+    #In Dirac mode these are all the same
+    code_root='/lsst'
+    output_root=code_root
+    data_root=code_root
+
+    def __init__(self, tree_name, run_name, code_date, blacklist_file='blacklist-y1.txt', ini='params_bd.ini', nsplit=5, debug=0, local=False, dirac=True):
         self.run_name = run_name
         self.code_date = code_date
         self.tree = Ganga.GPI.jobtree
@@ -22,6 +24,7 @@ class MedsJobs(object):
         self.debug=debug
         self.local=local
         self.nsplit=nsplit
+        self.dirac=dirac
         self.root='/'+tree_name
         self.tree.mkdir(self.root)
 
@@ -66,7 +69,7 @@ class MedsJobs(object):
         ]
 
         splitter=Ganga.GPI.ArgSplitter(args=arg_sets)
-        exe=Ganga.GPI.Executable(exe=Ganga.GPI.File("launch_and_run.sh"))
+        exe=Ganga.GPI.Executable(exe=Ganga.GPI.File("launch_and_run_dirac.sh"))
         backend=self.get_backend()
 
         job=Ganga.GPI.Job(application=exe, backend=backend, name=job_name, splitter=splitter)
@@ -77,6 +80,8 @@ class MedsJobs(object):
     def get_backend(self):
         if self.local:
             backend=Ganga.GPI.Local()
+        elif self.dirac:
+            backend=Ganga.GPI.Dirac()
         else:
             backend=Ganga.GPI.CREAM()
             backend.CE = self.get_cream()
@@ -140,7 +145,7 @@ def test_one():
     tile_file='DES2356-4831-z-meds-y1a1-alpha.fits.fz'
     code_date="2016-02-01" #for file path
     debug=5 #actual number of jobs created
-    j=MedsJobs(tree_name, run_name, code_date, local=False, debug=debug)
+    j=MedsJobs(tree_name, run_name, code_date, nsplit=1000, local=False, debug=debug, dirac=True)
     j.add_meds(tile_file)
     return j
 
