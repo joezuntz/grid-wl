@@ -6,16 +6,19 @@ import sys
 import collections
 import itertools
 
-creams = [line.strip() for line in open('working_ces.txt').readlines() if (line.strip()) and (not line.startswith('#'))]
-cream_cycle = itertools.cycle(creams)
+#creams = [line.strip() for line in open('working_ces.txt').readlines() if line.strip()]
+#cream_cycle = itertools.cycle(creams)
 
 class MedsJobs(object):
-    #In Dirac mode these are all the same
     code_root='/lsst'
-    output_root=code_root
+    # code_root='/cvmfs/lsst.opensciencegrid.org/uk/shape-measurement/im3shape/im3shape-2015-08-05'
+    # code_root='srm://gridpp09.ecdf.ed.ac.uk/dpm/ecdf.ed.ac.uk/home/gridpp/lsst/zuntz'
+    # data_root='srm://bohr3226.tier2.hep.manchester.ac.uk/dpm/ecdf.ed.ac.uk/home/lsst/lsst'
     data_root=code_root
+    output_root=code_root #'srm://gridpp09.ecdf.ed.ac.uk/dpm/ecdf.ed.ac.uk/home/gridpp/lsst/zuntz'
+    target_storage='UKI-NORTHGRID-MAN-HEP-disk'
 
-    def __init__(self, tree_name, run_name, code_date, blacklist_file='blacklist-y1.txt', ini='params_bd.ini', nsplit=5, debug=0, local=False, dirac=True):
+    def __init__(self, tree_name, run_name, code_date, blacklist_file='blacklist-y1.txt', ini='params_bd.ini', nsplit=20, debug=0, local=False):
         self.run_name = run_name
         self.code_date = code_date
         self.tree = Ganga.GPI.jobtree
@@ -24,7 +27,6 @@ class MedsJobs(object):
         self.debug=debug
         self.local=local
         self.nsplit=nsplit
-        self.dirac=dirac
         self.root='/'+tree_name
         self.tree.mkdir(self.root)
 
@@ -44,9 +46,6 @@ class MedsJobs(object):
         code_remote_path="{code_root}/{run_name}/software/{code_date}/im3shape-grid.tar.gz".format(**locals())        
         data_remote_path="{data_root}/{tile_file}".format(**locals())
         
-        
-        
-
         #The nsplit parameter controls two things:
         #  - the number of jobs we actually create
         #  - the number of jobs im3shape thinks there are 
@@ -62,17 +61,17 @@ class MedsJobs(object):
         arg_sets=[
             [code_remote_path, data_remote_path, 
              "{output_root}/{run_name}/results/{tile_file}.{job_rank}.{split_count}".format(**locals()),  #output path difference for each subjob
-             ini, cat, job_rank, split_count,
-             self.blacklist_file,
-            ] 
+             ini, cat, job_rank, split_count, self.blacklist_file, self.target_storage,
+             ] 
             for job_rank in xrange(job_count)
         ]
 
         splitter=Ganga.GPI.ArgSplitter(args=arg_sets)
-        exe=Ganga.GPI.Executable(exe=Ganga.GPI.File("launch_and_run_dirac.sh"))
+        exe=Ganga.GPI.Executable(exe=Ganga.GPI.File("launch_and_run.sh"))
         backend=self.get_backend()
 
         job=Ganga.GPI.Job(application=exe, backend=backend, name=job_name, splitter=splitter)
+        
         job.inputfiles = [Ganga.GPI.LocalFile(self.ini_file), Ganga.GPI.LocalFile(self.blacklist_file)]
 
         self.tree.add(job, self.root)
@@ -80,11 +79,10 @@ class MedsJobs(object):
     def get_backend(self):
         if self.local:
             backend=Ganga.GPI.Local()
-        elif self.dirac:
-            backend=Ganga.GPI.Dirac()
         else:
-            backend=Ganga.GPI.CREAM()
-            backend.CE = self.get_cream()
+            backend=Ganga.GPI.Dirac()
+#            backend=Ganga.GPI.CREAM()
+#            backend.CE = self.get_cream()
         return backend
 
     def get_cream(self):
@@ -97,8 +95,9 @@ class MedsJobs(object):
         return jobs
     
     def submit(self):
+
         for job in self.all_jobs():
-            job.submit()
+            Ganga.GPI.queues.add(job.submit)
 
     def add_list(self, meds_list):
         meds_files = [line.strip() for line in open(meds_list) if not line.strip().startswith('#')]
@@ -144,8 +143,9 @@ def test_one():
     tree_name='run1'
     tile_file='DES2356-4831-z-meds-y1a1-alpha.fits.fz'
     code_date="2016-02-01" #for file path
-    debug=5 #actual number of jobs created
-    j=MedsJobs(tree_name, run_name, code_date, nsplit=1000, local=False, debug=debug, dirac=True)
+    debug=2 #actual number of jobs created
+    nsplit=500 #number of chunks the file is split into.
+    j=MedsJobs(tree_name, run_name, code_date, local=False, debug=debug, nsplit=nsplit)
     j.add_meds(tile_file)
     return j
 
@@ -153,19 +153,14 @@ def test_33():
     tree_name='run33'
     run_name="y1a1-v2-z"
     tile_file='DES2356-4831-z-meds-y1a1-alpha.fits.fz'
-    code_date="2016-02-01" #for file path                                                                                                                                          
+    code_date="2016-02-01" #for file path                                                                              
     j=MedsJobs(tree_name, run_name, code_date, local=False)
     tile_files = [line.strip() for line in open('meds-y1.txt').readlines() if line.strip()]
     tile_files = tile_files[:33]
     for tile_file in tile_files:
         j.add_meds(tile_file)
 
-def summarize(job):
-    statuses = ['submitted', 'running', 'completed']
-    counts = [len([sj for sj in job.subjobs if sj.status==s]) for s in statuses]
-    print '  '.join('{0}:{1}'.format(s,c) for (s,c) in zip(statuses,counts)), job.backend.CE
-    
 
 if __name__=="__main__":
-    j = test()
-#    j.submit()
+    j = test_one()
+    j.submit()
